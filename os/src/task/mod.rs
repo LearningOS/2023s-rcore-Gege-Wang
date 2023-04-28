@@ -14,7 +14,12 @@ mod switch;
 #[allow(clippy::module_inception)]
 mod task;
 
+use core::usize;
+
+use crate::config::MAX_SYSCALL_NUM;
+
 use crate::loader::{get_app_data, get_num_app};
+use crate::mm::MapPermission;
 use crate::sync::UPSafeCell;
 use crate::trap::TrapContext;
 use alloc::vec::Vec;
@@ -46,6 +51,8 @@ struct TaskManagerInner {
     tasks: Vec<TaskControlBlock>,
     /// id of current `Running` task
     current_task: usize,
+    /// avoid repeat alloc
+    vec_for_alloc: Vec<(usize, usize)>,
 }
 
 lazy_static! {
@@ -58,12 +65,14 @@ lazy_static! {
         for i in 0..num_app {
             tasks.push(TaskControlBlock::new(get_app_data(i), i));
         }
+        let vec_for_alloc: Vec<(usize, usize)> = Vec::new();
         TaskManager {
             num_app,
             inner: unsafe {
                 UPSafeCell::new(TaskManagerInner {
                     tasks,
                     current_task: 0,
+                    vec_for_alloc,
                 })
             },
         }
@@ -120,6 +129,63 @@ impl TaskManager {
         inner.tasks[inner.current_task].get_user_token()
     }
 
+    ///Get memory_set
+    fn append_to_memset(&self, start: usize, new_end: usize) -> bool {
+        let mut inner  = self.inner.exclusive_access();
+        let cur = inner.current_task;
+        inner.tasks[cur]
+            .memory_set
+            .append_to(start.into(),new_end.into())
+    }
+
+    ///Remove memory_set
+    fn remove_from_memset(&self, start: usize, new_end: usize) -> bool {
+        let mut inner = self.inner.exclusive_access();
+        let cur = inner.current_task;
+        inner.tasks[cur]
+            .memory_set
+            .shrink_to(start.into(), new_end.into())
+    }
+
+    ///Push
+    fn push(&self, start: usize, end: usize, permission: MapPermission) -> bool {
+        let mut inner = self.inner.exclusive_access();
+        let cur = inner.current_task;
+
+        let mut cp_vec = inner.vec_for_alloc.clone();
+
+        while !cp_vec.is_empty() {
+            let (beg, en) = cp_vec.pop().unwrap();
+            if !((start < beg && end <= beg) || (start >= en && end >en)) {
+                return false;
+            }
+        }
+        inner.vec_for_alloc.push((start, end));
+        inner.tasks[cur]
+            .memory_set
+            .insert_framed_area(start.into(), end.into(), permission);
+        true
+    }
+    ///Return 
+    pub fn pay_back(&self, start: usize, end: usize){
+        let mut inner = self.inner.exclusive_access();
+        let mut index:usize = 0;
+        let mut cp_vec = inner.vec_for_alloc.clone();
+        cp_vec.reverse();
+        inner.vec_for_alloc.reverse();
+        while !cp_vec.is_empty(){
+            index += 1;
+            let (beg, en) = cp_vec.pop().unwrap();
+            if beg >= start && en <= end{
+                if beg == start && en == end{
+                    inner.vec_for_alloc.remove(index);
+                }
+            }
+             inner.vec_for_alloc.reverse();
+             return
+        }
+    }
+
     /// Get the current 'Running' task's trap contexts.
     fn get_current_trap_cx(&self) -> &'static mut TrapContext {
         let inner = self.inner.exclusive_access();
@@ -153,6 +219,29 @@ impl TaskManager {
             panic!("All applications completed!");
         }
     }
+    fn get_current_task_state(&self) -> TaskStatus {
+        let inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].task_status
+    }
+
+    fn get_init_time(&self) -> usize{
+        let inner = self.inner.exclusive_access();
+        inner.tasks[0].time
+    }
+
+    fn get_tcb_syscall_times(&self) -> [u32; MAX_SYSCALL_NUM] {
+        let inner  = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].tcb_syscall_times
+    }
+    
+    fn set_tcb_syscall_times(&self, syscall_id: usize) {
+        let mut inner = self.inner.exclusive_access();
+        let current = inner.current_task;
+        inner.tasks[current].tcb_syscall_times[syscall_id] += 1;
+    }
+
 }
 
 /// Run the first task in task list.
@@ -201,4 +290,43 @@ pub fn current_trap_cx() -> &'static mut TrapContext {
 /// Change the current 'Running' task's program break
 pub fn change_program_brk(size: i32) -> Option<usize> {
     TASK_MANAGER.change_current_program_brk(size)
+}
+/// get memory set
+pub fn append_to_memset(start: usize, end: usize) -> bool {
+    TASK_MANAGER.append_to_memset(start, end)
+}
+
+/// push
+pub fn push(start: usize, end: usize, permission: MapPermission) -> bool {
+    TASK_MANAGER.push(start, end, permission)
+}
+
+/// pop
+pub fn remove_from_memset(begin: usize, end: usize) -> bool {
+    TASK_MANAGER.remove_from_memset(begin, end)
+}
+
+/// pay
+pub fn pay_back(begin: usize, end: usize) {
+    TASK_MANAGER.pay_back(begin, end);
+}
+
+/// get state
+pub fn get_current_task_state() -> TaskStatus{
+    TASK_MANAGER.get_current_task_state()
+}
+
+/// get the init time
+pub fn get_init_time() -> usize {
+    TASK_MANAGER.get_init_time()
+}
+
+/// get tcb syscall times
+pub fn get_tcb_syscall_times() -> [u32; MAX_SYSCALL_NUM] {
+    TASK_MANAGER.get_tcb_syscall_times()
+}
+
+/// set tcb syscall times
+pub fn set_tcb_syscall_times(syscall_id : usize) {
+    TASK_MANAGER.set_tcb_syscall_times(syscall_id);
 }
