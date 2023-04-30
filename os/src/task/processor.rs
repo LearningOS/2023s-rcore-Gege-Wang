@@ -60,6 +60,7 @@ pub fn run_tasks() {
             // access coming task TCB exclusively
             let mut task_inner = task.inner_exclusive_access();
             let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
+            task_inner.addtion_info.init_time();
             task_inner.task_status = TaskStatus::Running;
             // release coming task_inner manually
             drop(task_inner);

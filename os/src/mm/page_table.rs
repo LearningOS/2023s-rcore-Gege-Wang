@@ -1,7 +1,7 @@
 //! Implementation of [`PageTableEntry`] and [`PageTable`].
 use super::{frame_alloc, FrameTracker, PhysAddr, PhysPageNum, StepByOne, VirtAddr, VirtPageNum};
 use alloc::string::String;
-use alloc::vec;
+use alloc::{format, vec};
 use alloc::vec::Vec;
 use bitflags::*;
 
@@ -160,6 +160,31 @@ impl PageTable {
     }
 }
 
+/// map/unmap
+impl PageTable {
+    pub fn map_result(
+        &mut self,
+        vpn: VirtPageNum,
+        ppn: PhysPageNum,
+        flags: PTEFlags,
+    ) -> Result<(), String> {
+        let pte = self.find_pte_create(vpn).unwrap();
+        if pte.is_valid() {
+            return Err(format!("vpn {:?} is mapped before mapping", vpn));
+        }
+        *pte = PageTableEntry::new(ppn, flags | PTEFlags::V);
+        Ok(())
+    }
+
+    pub fn unmap_result(&mut self, vpn: VirtPageNum) -> Result<(), String> {
+        let pte = self.find_pte_create(vpn).unwrap();
+        if !pte.is_valid() {
+            return Err(format!("vpn {:?} is invalid before unmapping", vpn));
+        }
+        *pte = PageTableEntry::empty();
+        Ok(())
+    }
+}
 /// Translate&Copy a ptr[u8] array with LENGTH len to a mutable u8 Vec through page table
 pub fn translated_byte_buffer(token: usize, ptr: *const u8, len: usize) -> Vec<&'static mut [u8]> {
     let page_table = PageTable::from_token(token);
