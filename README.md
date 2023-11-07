@@ -1,54 +1,23 @@
-# rCore-Tutorial-Code-2023S
+# Miyamo's Boosting Daily
 
-### Code
-- [Soure Code of labs for 2023S](https://github.com/LearningOS/rCore-Tutorial-Code-2023S)
-### Documents
+> Welcome to here and feel free to look around!
 
-- Concise Manual: [rCore-Tutorial-Guide-2023S](https://LearningOS.github.io/rCore-Tutorial-Guide-2023S/)
+## 我对这份记录的期望
+这个话题还是要好好说一说的，之前因为很多原因(xxx)，就是因为我太懒惰罢了，总之没有把 Daily record 这件事情做好。后来就写在了自己的文档了，经过自己仔细的斟酌之后，还是决定放在开源平台上。
+- 拥抱开源。
+- 拥抱新技术。
+- 拥抱新 idea。
+- 拥抱各种意见。
+- hello, world!
 
-- Detail Book [rCore-Tutorial-Book-v3](https://rcore-os.github.io/rCore-Tutorial-Book-v3/)
-
-
-### OS API docs of rCore Tutorial Code 2023S
-- [OS API docs of ch1](https://learningos.github.io/rCore-Tutorial-Code-2023S/ch1/os/index.html)
-  AND [OS API docs of ch2](https://learningos.github.io/rCore-Tutorial-Code-2023S/ch2/os/index.html)
-- [OS API docs of ch3](https://learningos.github.io/rCore-Tutorial-Code-2023S/ch3/os/index.html)
-  AND [OS API docs of ch4](https://learningos.github.io/rCore-Tutorial-Code-2023S/ch4/os/index.html)
-- [OS API docs of ch5](https://learningos.github.io/rCore-Tutorial-Code-2023S/ch5/os/index.html)
-  AND [OS API docs of ch6](https://learningos.github.io/rCore-Tutorial-Code-2023S/ch6/os/index.html)
-- [OS API docs of ch7](https://learningos.github.io/rCore-Tutorial-Code-2023S/ch7/os/index.html)
-  AND [OS API docs of ch8](https://learningos.github.io/rCore-Tutorial-Code-2023S/ch8/os/index.html)
-- [OS API docs of ch9](https://learningos.github.io/rCore-Tutorial-Code-2023S/ch9/os/index.html)
-
-### Related Resources
-- [Learning Resource](https://github.com/LearningOS/rust-based-os-comp2022/blob/main/relatedinfo.md)
+## 记录的形式
+经过仔细的思考（拍脑袋），我决定至少每两天进行一次 record，并写一份 markdown 格式的报告和总结。
 
 
-### Build & Run
+## 时间周期
+20231107——20231215
 
-```bash
-# setup build&run environment first
-$ git clone https://github.com/LearningOS/rCore-Tutorial-Code-2023S.git
-$ cd rCore-Tutorial-Code-2023S
-$ git clone https://github.com/LearningOS/rCore-Tutorial-Test-2023S.git user
-$ cd os
-$ git checkout ch$ID
-# run OS in ch$ID
-$ make run
-```
-Notice: $ID is from [1-9]
+## Miyamo's Template
+TODO
 
-### Grading
 
-```bash
-# setup build&run environment first
-$ git clone https://github.com/LearningOS/rCore-Tutorial-Code-2023S.git
-$ cd rCore-Tutorial-Code-2023S
-$ rm -rf ci-user
-$ git clone https://github.com/LearningOS/rCore-Tutorial-Checker-2023S.git ci-user
-$ git clone https://github.com/LearningOS/rCore-Tutorial-Test-2023S.git ci-user/user
-$ git checkout ch$ID
-# check&grade OS in ch$ID with more tests
-$ cd ci-user && make test CHAPTER=$ID
-```
-Notice: $ID is from [3,4,5,6,8]
