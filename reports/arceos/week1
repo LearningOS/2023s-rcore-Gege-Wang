@@ -1,0 +1,42 @@
+# 练习1 
+支持彩色打印println!。以apps/helloworld为测试应用。
+要求：不能在helloworld程序本身改，要在下面的库或更深层次的组件修改。
+预期输出：执行 make run ARCH=riscv64
+
+##解题思路
+这道题，我是根据 chatgpt 做的，实际上我给 println 加了一个参数，这不合理，需要重构。
+
+
+# 练习2
+支持HashMap数据类型。以apps/memtest为测试应用。
+首先修改apps/memtest/src/main.rs，把BTreeMap替换为HashMap，如下：
+
+然后，尝试编译运行， make A=apps/memtest ARCH=riscv64 run ，此时会报错，因为我们目前不支
+持HashMap类型。
+要求：在ulib/axstd中支持HashMap类型
+预期输出：执行 make A=apps/memtest ARCH=riscv64 run
+
+提示 ：
+1. 参考官方rust标准库中的HashMap实现，把涉及的代码拷过来，做一下修改。只需要满足memtest
+的测试需要即可。
+2. 注意：官方std与ArceOS的axstd的区别。官方rust标准库主要是基于Linux/Windows这些内核，为
+应用提供的用户库。官方std的支持后端是libc+syscall；而ArceOS是单特权级，没有syscall一说，
+axstd直接通过一系列function-call调用底层的功能。
+3. HashMap之所以没有像其他collections类型一样放到alloc库中实现，主要是因为它需要随机数的支
+持，而随机数的产生机制是平台相关的。大家做实验可以简单点，用一个软实现的随机数函数来产
+生。
+
+## 解题思路
+1. 首先在 std 中建立一个 collections 目录，这个目录中放的是 hashmap 的实现。
+2. 将模块进行导出，在文件夹中建立一个 mod.rs 进行模块的导出。
+3. 根据 std 中的 hashmap 实现，完成自己的功能，是一个阉割版。
+4. 事实上，要遵循 KISS 原则，80% 是语法错误，剩下 20% 的 80% 是简单逻辑问题。 
+
+## 需要解决的问题
+1. 给出的随机数代码中的 time 模块没有实现 currect_ticks()，这个其实在 axhal 中，导致我在 axstd 的 cargo.toml 中导入了 axhal，感觉很奇怪，配置代码不是很好看，需要重构。
+2. 没有搞清楚 lib.rs，mod.rs，cargo.toml 文件的作用和要放入的东西。现在的理解是lib.rs是作为一个模块要导出的东西，mod.rs是当前的一个源代码的一部分要导出的，cargo.toml 放的是这个模块依赖的东西，包括 feature 和 dependency 。
+3. featuree 和 依赖 是什么东西，概念不清。
+4. 有一个包叫做 hashbrown，这个包很重要，是不依赖于 std 的，实现了hashmap的大部分功能，刚开始很长一段时间没有找到。导致无头苍蝇。
+
+## 代码仓库
+https://github.com/Gege-Wang/arceos/tree/week1
